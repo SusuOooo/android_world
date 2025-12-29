@@ -25,7 +25,16 @@ from android_world.env import interface
 from android_world.env.setup_device import setup
 from android_world.utils import app_snapshot
 from android_world.utils import datetime_utils
+from android_world.env.setup_device import setup, apps
 
+RESET_APPS = {
+  "audio recorder": apps.AudioRecorder,
+  "camera": apps.CameraApp,
+  "chrome": apps.ChromeApp,
+  "markor": apps.MarkorApp,
+  "simple calendar pro": apps.SimpleCalendarProApp,
+  "tasks": apps.TasksApp,
+}
 
 class TaskEval(abc.ABC):
   """Interface for a task and its evaluation.
@@ -123,6 +132,10 @@ class TaskEval(abc.ABC):
           app_snapshot.restore_snapshot(app_name, env.controller)
         except RuntimeError as error:
           logging.warning("Skipping app snapshot loading : %s", error)
+
+        # if app_name in RESET_APPS:
+        #   logging.info("Reset app for %s", app_name)
+        #   setup.setup_app(RESET_APPS[app_name], env)
 
   def install_apps_if_not_installed(self, env: interface.AsyncEnv) -> None:
     for app_name in self.app_names:

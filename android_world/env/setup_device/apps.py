@@ -30,6 +30,8 @@ from android_world.env import tools
 from android_world.task_evals.information_retrieval import joplin_app_utils
 from android_world.utils import file_utils
 import requests
+from android_world.env import actuation
+from android_world.env import json_action
 
 
 APP_DATA = file_utils.convert_to_posix_path(os.path.dirname(__file__),
@@ -162,8 +164,15 @@ class ChromeApp(AppSetup):
     try:
       controller = tools.AndroidToolController(env=env.controller)
       time.sleep(2.0)
-      # Welcome screen.
-      controller.click_element("Accept & continue")
+      try:
+        # Welcome screen.
+        controller.click_element("Accept & continue")
+      except ValueError as e:
+        # Use without an account
+        logging.warn("Can't find `Accept & continue`, try to clock `Use without an account`.")
+        time.sleep(10)
+        action = json_action.JSONAction(action_type='click', x=540, y=2096)
+        actuation.execute_adb_action(action, [], (0, 0), env.controller)
       time.sleep(2.0)
       # Turn on sync?
       controller.click_element("No thanks")
@@ -207,8 +216,12 @@ class ContactsApp(AppSetup):
       # Back up & organize your contacts with Google.
       controller.click_element("Skip")
       time.sleep(2.0)
+      # restart app: to show "Don't Allow"
+      adb_utils.close_app(cls.app_name, env.controller)
+      adb_utils.launch_app(cls.app_name, env.controller)
       # Allow Contacts to send you notifications?
-      controller.click_element("Don't allow")
+      time.sleep(2.0)
+      controller.click_element("Don`t Allow")
       time.sleep(2.0)
     finally:
       adb_utils.close_app(cls.app_name, env.controller)
@@ -246,16 +259,29 @@ class MarkorApp(AppSetup):
     try:
       controller = tools.AndroidToolController(env=env.controller)
       time.sleep(2.0)
-      controller.click_element("NEXT")
+      action = json_action.JSONAction(action_type='click', x=984, y=2243)
+      actuation.execute_adb_action(action, [], (0, 0), env.controller)
       time.sleep(2.0)
-      controller.click_element("NEXT")
+      actuation.execute_adb_action(action, [], (0, 0), env.controller)
       time.sleep(2.0)
-      controller.click_element("NEXT")
+      actuation.execute_adb_action(action, [], (0, 0), env.controller)
       time.sleep(2.0)
-      controller.click_element("NEXT")
+      actuation.execute_adb_action(action, [], (0, 0), env.controller)
       time.sleep(2.0)
-      controller.click_element("DONE")
+      actuation.execute_adb_action(action, [], (0, 0), env.controller)
       time.sleep(2.0)
+
+      # time.sleep(2.0)
+      # controller.click_element("NEXT")
+      # time.sleep(2.0)
+      # controller.click_element("NEXT")
+      # time.sleep(2.0)
+      # controller.click_element("NEXT")
+      # time.sleep(2.0)
+      # controller.click_element("NEXT")
+      # time.sleep(2.0)
+      # controller.click_element("DONE")
+      # time.sleep(2.0)
 
       controller.click_element("OK")
       time.sleep(2.0)
@@ -466,7 +492,16 @@ class AudioRecorder(AppSetup):
         env.controller,
     )
     time.sleep(2.0)  # Let app setup.
-    adb_utils.close_app(cls.app_name, env.controller)
+    
+    # 不知道哪次更新被AndroidWorld删除了，现在恢复一下
+    try:
+      controller = tools.AndroidToolController(env=env.controller)
+      controller.click_element("Get started")
+      time.sleep(2.0)
+      controller.click_element("Apply")
+      time.sleep(2.0)
+    finally:
+      adb_utils.close_app(cls.app_name, env.controller)
 
 
 class MiniWobApp(AppSetup):

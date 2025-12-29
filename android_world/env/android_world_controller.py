@@ -321,7 +321,10 @@ def get_controller(
               adb_port=console_port + 1,
               grpc_port=grpc_port,
           ),
-          adb_controller=config_classes.AdbControllerConfig(adb_path=adb_path),
+          adb_controller=config_classes.AdbControllerConfig(
+              adb_path=adb_path,
+              adb_server_port=int(os.environ.get('ANDROID_ADB_SERVER_PORT', '5037'))
+          ),
       ),
   )
   android_env_instance = loader.load(config)

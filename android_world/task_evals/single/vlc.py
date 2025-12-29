@@ -70,6 +70,35 @@ def _get_playlist_file_info(
         sqlite_schema_utils.PlaylistInfo,
     )
 
+def _fix_loading_issue(env: interface.AsyncEnv):
+  try:
+    import time
+    from absl import logging
+    from android_world.env import adb_utils
+    from android_world.env import actuation
+    from android_world.env import json_action
+    adb_utils.launch_app("vlc", env.controller)
+    pages = ["Playlists", "Browse"]
+    for page in pages:
+      wait_time = 0
+      should_wait = True
+      actuation.find_and_click_element(page, env.controller)
+      while should_wait and wait_time < 300:
+        should_wait = False
+        ui_elements = env.controller.get_ui_elements()
+        for i, element in enumerate(ui_elements):
+          for attr in [element.text, element.content_description]:
+            if attr is not None:
+              if "Loading" in attr:
+                should_wait = True
+                wait_time += 10
+                time.sleep(10)
+      if wait_time >= 300:
+        logging.warning(f"Failed to skip loading screen in {page} page for VLC app.")
+    action = json_action.JSONAction(action_type='navigate_home')
+    actuation.execute_adb_action(action, [], (0, 0), env.controller)
+  except:
+    logging.warning("Failed to execute `fix_loading_issue` for VLC app.")
 
 class _VLC(task_eval.TaskEval):
 
@@ -136,6 +165,7 @@ class VlcCreatePlaylist(_VLC):
     super().initialize_task(env)
     _clear_playlist_dbs(env)
     self.setup_files(env)
+    _fix_loading_issue(env)
 
   def tear_down(self, env: interface.AsyncEnv):
     super().tear_down(env)
@@ -216,6 +246,7 @@ class VlcCreateTwoPlaylists(task_eval.TaskEval):
     super().initialize_task(env)
     self.task1.initialize_task(env)
     self.task2.setup_files(env)  # Don't want to clear db.
+    _fix_loading_issue(env)
 
   def tear_down(self, env: interface.AsyncEnv):
     super().tear_down(env)
