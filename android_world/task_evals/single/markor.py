@@ -939,6 +939,10 @@ class MarkorTranscribeVideo(Markor):
             vlc.generate_file_name() for _ in range(random.randint(5, 20))
         ],
     }
+  
+  def tear_down(self, env: interface.AsyncEnv):
+    super().tear_down(env)
+    self.create_file_task.tear_down(env)
 
 _NOTE_TITLES = [
     "grocery_list_weekly.md",
